@@ -1,0 +1,153 @@
+import java.util.Scanner;
+
+public class Bully 
+{
+    static boolean[] state = new boolean[5];
+
+    public static void up(int up)
+    {
+        if (state[up - 1])
+        {
+            System.out.println("Process " + up + " is already up");
+        }
+        else
+        {
+            state[up - 1] = true;
+
+            System.out.println("Process " + up + " held election");
+
+            for (int i = up; i < 5; ++i)
+            {
+                System.out.println("Election message sent from Process " + up +
+                        " to Process " + (i + 1));
+            }
+
+            for (int i = up + 1; i <= 5; ++i)
+            {
+                if (state[i - 1])
+                {
+                    System.out.println("Alive message sent from Process " + i +
+                            " to Process " + up);
+                    break;
+                }
+            }
+        }
+    }
+
+    public static void down(int down)
+    {
+        if (!state[down - 1])
+        {
+            System.out.println("Process " + down + " is already down");
+        }
+        else
+        {
+            state[down - 1] = false;
+            System.out.println("Process " + down + " is now down");
+        }
+    }
+
+    public static void mess(int mess)
+    {
+        if (state[mess - 1])
+        {
+            if (state[4])
+            {
+                System.out.println("OK");
+            }
+            else
+            {
+                System.out.println("Process " + mess + " starts election");
+
+                for (int i = mess; i < 5; ++i)
+                {
+                    System.out.println("Election message sent from Process " +
+                            mess + " to Process " + (i + 1));
+                }
+
+                for (int i = 5; i >= mess; --i)
+                {
+                    if (state[i - 1])
+                    {
+                        System.out.println("Coordinator message sent from Process "
+                                + i + " to all");
+                        break;
+                    }
+                }
+            }
+        }
+        else
+        {
+            System.out.println("Process " + mess + " is down");
+        }
+    }
+
+    public static void main(String[] args)
+    {
+        Scanner sc = new Scanner(System.in);
+
+        for (int i = 0; i < 5; ++i)
+        {
+            state[i] = true;
+        }
+
+        int choice;
+
+        System.out.println("5 Active Processes:");
+        System.out.println("P1 P2 P3 P4 P5");
+        System.out.println("Process 5 is Coordinator");
+
+        do
+        {
+            System.out.println("\n1. Up a Process");
+            System.out.println("2. Down a Process");
+            System.out.println("3. Send Message");
+            System.out.println("4. Exit");
+
+            choice = sc.nextInt();
+
+            switch (choice)
+            {
+                case 1:
+                    System.out.println("Enter process number to bring up:");
+                    int up = sc.nextInt();
+
+                    if (up == 5)
+                    {
+                        System.out.println("Process 5 is Coordinator");
+                        state[4] = true;
+                    }
+                    else
+                    {
+                        up(up);
+                    }
+                    break;
+
+                case 2:
+                    System.out.println("Enter process number to bring down:");
+                    int down = sc.nextInt();
+                    down(down);
+                    break;
+
+                case 3:
+                    System.out.println("Enter process number to send message:");
+                    int mess = sc.nextInt();
+                    mess(mess);
+                    break;
+
+                case 4:
+                    System.out.println("Program Terminated");
+                    break;
+
+                default:
+                    System.out.println("Invalid Choice");
+            }
+
+        } while (choice != 4);
+
+        sc.close();
+    }
+}
+
+commands:-javac *.java
+          java Bully
