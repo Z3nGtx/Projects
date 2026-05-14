@@ -1,157 +1,217 @@
-// CalcServer.java  
-import CalcApp.*;  
-import CalcApp.CalcPackage.DivisionByZero; 
-import java.util.Properties; import                     
-org.omg.CORBA.*; import 
-org.omg.CosNaming.*;  
-import org.omg.CosNaming.NamingContextPackage.*; 
-import org.omg.PortableServer.*; class CalcImpl 
-extends CalcPOA {  
-    @Override  
-public float sum(float a, float b) { 
-return a + b;  
-    }     
-@Override  
-public float div(float a, float b) throws DivisionByZero {         
-if (b == 0) {  
-            throw new CalcApp.CalcPackage.DivisionByZero();  
-} else {             
-return a / b;  
-        }  
-    }     
-@Override  
-public float mul(float a, float b) {         
-return a * b;  
-    }     
-@Override  
-public float sub(float a, float b) {         
-return a - b;  
-} 
-private ORB orb; 
-public void setORB(ORB orb_val) {         
-orb = orb_val;  
-}  
-}  
-public class CalcServer {  
-public static void main(String args[]) {         
-try {  
-            // create and initialize the ORB  
-            ORB orb = ORB.init(args, null);  
-            // get reference to rootpoa & activate the POAManager  
-POA rootpoa = 
-POAHelper.narrow(orb.resolve_initial_references("RootPOA"));                
-rootpoa.the_POAManager().activate();  
-// create servant and register it with the ORB             
-CalcImpl helloImpl = new CalcImpl();             
-helloImpl.setORB(orb);  
-            // get object reference from the servant  
-            org.omg.CORBA.Object ref = rootpoa.servant_to_reference(helloImpl);  
-            Calc href = CalcHelper.narrow(ref);  
-// get the root naming context             
-// NameService invokes the name service             
-org.omg.CORBA.Object objRef =  
-                orb.resolve_initial_references("NameService");  
-// Use NamingContextExt which is part of the Interoperable               
-// Naming Service (INS) specification.  
-            NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);  
-            // bind the Object Reference in Naming  
-            String name = "Calc";  
-NameComponent path[] = ncRef.to_name(name);             
-ncRef.rebind(path, href);  
-System.out.println("Ready..");             
-// wait for invocations from clients             
-orb.run();  
-        } catch (Exception e) {  
-            System.err.println("ERROR: " + e);  
-            e.printStackTrace(System.out);         
-}  
-        System.out.println("Exiting ...");  
-    }  
-}  
-  
-  
-  
-// CalcClient.java  
-import static java.lang.System.out;  
-  
-import CalcApp.*;  
-import CalcApp.CalcPackage.DivisionByZero; 
-import java.io.BufferedReader; import 
-java.io.IOException; import 
-java.io.InputStreamReader; import 
-org.omg.CORBA.*; import 
-org.omg.CosNaming.*;  
-import org.omg.CosNaming.NamingContextPackage.*; 
-public class CalcClient {    
-  static Calc calcImpl;   
-  static BufferedReader br =  
-        new BufferedReader(new InputStreamReader(System.in));     
-public static void main(String args[]) {  
-  try {  
-         // create and initialize the ORB  
-ORB orb = ORB.init(args, null);             
-// get the root naming context             
-org.omg.CORBA.Object objRef =  
-            orb.resolve_initial_references("NameService");  
-// Use NamingContextExt instead of NamingContext. This is             
-// part of the Interoperable naming Service.  
-            NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);  
-// resolve the Object Reference in Naming             
-String name = "Calc";  
-            calcImpl = CalcHelper.narrow(ncRef.resolve_str(name));  
-// System.out.println(calcImpl);             
-while (true) {                 
-out.println("1. Sum");                 
-out.println("2. Sub");                 
-out.println("3. Mul");                 
-out.println("4. Div");                 
-out.println("5. exit");                 
-out.println("--");                 
-out.println("choice: ");                 
-try {  
-String opt = br.readLine();                     
-if (opt.equals("5")) {                         
-break;  
-} else if (opt.equals("1")) {                         
-out.println("a+b= "  
-                     + calcImpl.sum(getFloat("a"), getFloat("b")));  
-} else if (opt.equals("2")) {                         
-out.println("a-b= "  
-                            + calcImpl.sub(getFloat("a"), getFloat("b")));  
-} else if (opt.equals("3")) {                            
-out.println("a*b= "  
-                            + calcImpl.mul(getFloat("a"), getFloat("b")));  
-} else if (opt.equals("4")) {                         
-try {  
-                            out.println("a/b= "  
-                                + calcImpl.div(getFloat("a"), getFloat("b")));  
-} catch (DivisionByZero de) {                             
-out.println("Division by zero!!!");  
-                        }  
-                    }  
-} catch (Exception e) {                     
-out.println("===");  
-out.println("Error with numbers");                     
-out.println("===");  
-                }  
-                out.println("");  
-            }  
-            // calcImpl.shutdown();  
-        } catch (Exception e) {  
-System.out.println("ERROR : " + e);  
-e.printStackTrace(System.out);  
-}     
-}  
-static float getFloat(String number) throws Exception {         
-out.print(number + ": ");  
-return Float.parseFloat(br.readLine());  
-}  
-}  
+//Create Calc.idl
+module CalcApp
+{
+    exception DivisionByZero {};
 
+    interface Calc
+    {
+        float sum(float a, float b);
+        float sub(float a, float b);
+        float mul(float a, float b);
+        float div(float a, float b)
+            raises(DivisionByZero);
+    };
+};
+
+//Create CalcServer.java
+import CalcApp.*;
+import CalcApp.CalcPackage.DivisionByZero;
+
+import org.omg.CORBA.*;
+import org.omg.CosNaming.*;
+import org.omg.PortableServer.*;
+
+class CalcImpl extends CalcPOA
+{
+    private ORB orb;
+
+    public void setORB(ORB orb_val)
+    {
+        orb = orb_val;
+    }
+
+    public float sum(float a, float b)
+    {
+        return a + b;
+    }
+
+    public float sub(float a, float b)
+    {
+        return a - b;
+    }
+
+    public float mul(float a, float b)
+    {
+        return a * b;
+    }
+
+    public float div(float a, float b)
+            throws DivisionByZero
+    {
+        if (b == 0)
+            throw new DivisionByZero();
+
+        return a / b;
+    }
+}
+
+public class CalcServer
+{
+    public static void main(String args[])
+    {
+        try
+        {
+            ORB orb = ORB.init(args, null);
+
+            POA rootpoa =
+                    POAHelper.narrow(
+                            orb.resolve_initial_references("RootPOA"));
+
+            rootpoa.the_POAManager().activate();
+
+            CalcImpl calcImpl = new CalcImpl();
+
+            calcImpl.setORB(orb);
+
+            org.omg.CORBA.Object ref =
+                    rootpoa.servant_to_reference(calcImpl);
+
+            Calc href = CalcHelper.narrow(ref);
+
+            org.omg.CORBA.Object objRef =
+                    orb.resolve_initial_references("NameService");
+
+            NamingContextExt ncRef =
+                    NamingContextExtHelper.narrow(objRef);
+
+            String name = "Calc";
+
+            NameComponent path[] = ncRef.to_name(name);
+
+            ncRef.rebind(path, href);
+
+            System.out.println("Calculator Server Ready...");
+
+            orb.run();
+        }
+        catch (Exception e)
+        {
+            System.out.println("ERROR: " + e);
+            e.printStackTrace(System.out);
+        }
+    }
+}
+
+
+//Create CalcClient.java
+import static java.lang.System.out;
+
+import CalcApp.*;
+import CalcApp.CalcPackage.DivisionByZero;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+
+import org.omg.CORBA.*;
+import org.omg.CosNaming.*;
+
+public class CalcClient
+{
+    static Calc calcImpl;
+
+    static BufferedReader br =
+            new BufferedReader(
+                    new InputStreamReader(System.in));
+
+    public static void main(String args[])
+    {
+        try
+        {
+            ORB orb = ORB.init(args, null);
+
+            org.omg.CORBA.Object objRef =
+                    orb.resolve_initial_references("NameService");
+
+            NamingContextExt ncRef =
+                    NamingContextExtHelper.narrow(objRef);
+
+            String name = "Calc";
+
+            calcImpl =
+                    CalcHelper.narrow(ncRef.resolve_str(name));
+
+            while (true)
+            {
+                out.println("1. Sum");
+                out.println("2. Sub");
+                out.println("3. Mul");
+                out.println("4. Div");
+                out.println("5. Exit");
+
+                out.print("Choice: ");
+
+                String opt = br.readLine();
+
+                if (opt.equals("5"))
+                    break;
+
+                float a = getFloat("a");
+                float b = getFloat("b");
+
+                switch (opt)
+                {
+                    case "1":
+                        out.println("a+b = " +
+                                calcImpl.sum(a, b));
+                        break;
+
+                    case "2":
+                        out.println("a-b = " +
+                                calcImpl.sub(a, b));
+                        break;
+
+                    case "3":
+                        out.println("a*b = " +
+                                calcImpl.mul(a, b));
+                        break;
+
+                    case "4":
+                        try
+                        {
+                            out.println("a/b = " +
+                                    calcImpl.div(a, b));
+                        }
+                        catch (DivisionByZero e)
+                        {
+                            out.println("Division by zero!");
+                        }
+                        break;
+
+                    default:
+                        out.println("Invalid Choice");
+                }
+
+                out.println();
+            }
+        }
+        catch (Exception e)
+        {
+            System.out.println("ERROR: " + e);
+            e.printStackTrace(System.out);
+        }
+    }
+
+    static float getFloat(String number)
+            throws Exception
+    {
+        out.print(number + ": ");
+        return Float.parseFloat(br.readLine());
+    }
+}
 
 
 commands for 1st terminal:-idlj - fall calc.idl
-                           javac -Xlint:none *.java CalcApp/*.java
+                           javac -Xlint:none *.java CalcApp/*.java or  javac -Xlint .java CalcApp/.java
                            orbd -ORBInitialPort 1050& 3852
 
 commands for 2nd terminal:- javac Calcserver.java
