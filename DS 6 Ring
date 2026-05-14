@@ -1,0 +1,162 @@
+import java.util.Scanner;
+
+class Rr
+{
+    int index;
+    int id;
+    int f;
+    String state;
+}
+
+public class Ring
+{
+    public static void main(String[] args)
+    {
+        int temp, i, j;
+
+        Rr proc[] = new Rr[10];
+
+        for (i = 0; i < proc.length; i++)
+        {
+            proc[i] = new Rr();
+        }
+
+        Scanner in = new Scanner(System.in);
+
+        System.out.println("Enter number of processes:");
+        int num = in.nextInt();
+
+        for (i = 0; i < num; i++)
+        {
+            proc[i].index = i;
+
+            System.out.println("Enter process ID:");
+            proc[i].id = in.nextInt();
+
+            proc[i].state = "active";
+            proc[i].f = 0;
+        }
+
+        // Sorting process IDs
+        for (i = 0; i < num - 1; i++)
+        {
+            for (j = 0; j < num - 1; j++)
+            {
+                if (proc[j].id > proc[j + 1].id)
+                {
+                    temp = proc[j].id;
+                    proc[j].id = proc[j + 1].id;
+                    proc[j + 1].id = temp;
+                }
+            }
+        }
+
+        System.out.println("\nProcesses are:");
+
+        for (i = 0; i < num; i++)
+        {
+            System.out.print("[" + i + "] " + proc[i].id + "  ");
+        }
+
+        proc[num - 1].state = "inactive";
+
+        System.out.println("\nProcess " + proc[num - 1].id +
+                " selected as Coordinator");
+
+        int ch;
+
+        while (true)
+        {
+            System.out.println("\n1. Election");
+            System.out.println("2. Quit");
+
+            ch = in.nextInt();
+
+            for (i = 0; i < num; i++)
+            {
+                proc[i].f = 0;
+            }
+
+            switch (ch)
+            {
+                case 1:
+
+                    System.out.println("Enter process number which initiates election:");
+                    int init = in.nextInt();
+
+                    int temp2 = init;
+                    int temp1 = init + 1;
+
+                    i = 0;
+
+                    int arr[] = new int[10];
+
+                    while (temp2 != temp1)
+                    {
+                        if (temp1 == num)
+                        {
+                            temp1 = 0;
+                        }
+
+                        if ("active".equals(proc[temp1].state)
+                                && proc[temp1].f == 0)
+                        {
+                            System.out.println("Process " + proc[init].id +
+                                    " sends message to " + proc[temp1].id);
+
+                            proc[temp1].f = 1;
+
+                            init = temp1;
+
+                            arr[i] = proc[temp1].id;
+                            i++;
+                        }
+
+                        temp1++;
+                    }
+
+                    System.out.println("Process " + proc[init].id +
+                            " sends message to " + proc[temp2].id);
+
+                    arr[i] = proc[temp2].id;
+                    i++;
+
+                    int max = -1;
+
+                    // Finding highest ID
+                    for (j = 0; j < i; j++)
+                    {
+                        if (max < arr[j])
+                        {
+                            max = arr[j];
+                        }
+                    }
+
+                    System.out.println("Process " + max +
+                            " selected as Coordinator");
+
+                    for (i = 0; i < num; i++)
+                    {
+                        if (proc[i].id == max)
+                        {
+                            proc[i].state = "inactive";
+                        }
+                    }
+
+                    break;
+
+                case 2:
+                    System.out.println("Program Terminated");
+                    in.close();
+                    return;
+
+                default:
+                    System.out.println("Invalid Choice");
+            }
+        }
+    }
+}
+
+
+commands:- Javac *.java
+           java Ring
